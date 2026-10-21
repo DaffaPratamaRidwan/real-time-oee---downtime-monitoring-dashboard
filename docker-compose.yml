@@ -1,0 +1,92 @@
+services:
+  # 1. PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: oee_factory_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pass123456}
+      POSTGRES_DB: ${POSTGRES_DB:-oee_factory_db}
+    ports:
+      - "${DB_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-oee_factory_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - factory_network
+
+  # 2. Standalone Database Seeder (Separated from backend)
+  db-seeder:
+    build:
+      context: ./db
+      dockerfile: Dockerfile
+    container_name: factory_db_seeder
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-pass123456}@db:5432/${POSTGRES_DB:-oee_factory_db}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - factory_network
+    restart: "no"
+
+  # 3. Hono Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: factory_backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-pass123456}@db:5432/${POSTGRES_DB:-oee_factory_db}
+      CORS_ORIGIN: "*"
+    depends_on:
+      db:
+        condition: service_healthy
+      db-seeder:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3001/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    networks:
+      - factory_network
+
+  # 4. Nuxt Frontend Dashboard
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NUXT_PUBLIC_API_BASE: http://localhost:3001
+    container_name: factory_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      NUXT_PUBLIC_API_BASE: http://localhost:3001
+      API_BASE_INTERNAL: http://backend:3001
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - factory_network
+
+volumes:
+  postgres_data:
+    name: oee_factory_postgres_data
+
+networks:
+  factory_network:
+    driver: bridge

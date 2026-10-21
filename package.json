@@ -1,0 +1,18 @@
+{
+  "name": "real-time-oee-downtime-monitoring-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Real-Time OEE & Downtime Monitoring Dashboard web app in electrical factory with Nuxt frontend, Hono backend, and separated PostgreSQL database & seeder",
+  "scripts": {
+    "db:up": "cd db && bun run db:up",
+    "db:down": "cd db && bun run db:down",
+    "db:migrate": "cd db && bun run db:migrate",
+    "db:seed": "cd db && bun run db:seed",
+    "db:reset": "cd db && bun run db:reset",
+    "db:simulate": "cd db && bun run db:simulate",
+    "db:simulate:watch": "cd db && bun run db:simulate:watch",
+    "backend:dev": "cd backend && bun run dev",
+    "frontend:dev": "cd frontend && bun run dev",
+    "frontend:build": "cd frontend && bun run build"
+  }
+}

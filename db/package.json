@@ -1,0 +1,25 @@
+{
+  "name": "oee-factory-db",
+  "version": "1.0.0",
+  "description": "Standalone PostgreSQL schema, migrations, seeding, and IoT telemetry simulation for Electrical Factory OEE & Downtime Monitoring",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:status": "docker compose ps",
+    "db:migrate": "bun run migrate.ts",
+    "db:seed": "bun run seed.ts",
+    "db:reset": "bun run migrate.ts && bun run seed.ts",
+    "db:simulate": "bun run simulate.ts",
+    "db:simulate:watch": "bun run simulate.ts --watch"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.8",
+    "postgres": "^3.4.9"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5"
+  }
+}
